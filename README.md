@@ -1,4 +1,4 @@
-# 😎MedRAG Reproduction
+# 😎MedRAG-Rebuild
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-green)](https://www.python.org/)[![PyTorch 2.0](https://img.shields.io/badge/PyTorch-2.0-red)](https://pytorch.org/)
 
