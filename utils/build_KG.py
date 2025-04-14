@@ -2,6 +2,7 @@
 The inspiration of this functions script is from <https://github.com/JesseYule/KnowledgeGraphBeginner>
 """
 
+import os
 import json
 from tqdm import tqdm
 from py2neo import Node, Relationship, NodeMatcher
@@ -115,15 +116,26 @@ def create_relations(graph, relations):
     print(f"Create relations successfully! ")
 
 
-def create_graph(graph, knowledge_path = 'KG_data_source\medical_ed.json'):
+def create_graph(graph, knowledge_path = 'KG_data_source/medical_ed.json', nodes_path = 'KG_data_source/nodes.json', relations_path = 'KG_data_source/relations.json'):
     """
     Create nodes in the graph using functions defined before
 
     Args:
         graph (_type_): 
+        knowledge_path (str, optional): Defaults to 'KG_data_source/medical_ed.json'.
+        nodes_path (str, optional): Defaults to 'KG_data_source/nodes.json'.
+        relations_path (str, optional): Defaults to 'KG_data_source/relations.json'.
     """
 
-    unique_nodes, unique_relations = read_files(knowledge_path)
+    if os.path.exists(nodes_path) and os.path.exists(relations_path):
+        print(f"本地路径存在，将通过本地数据创建知识图谱···")
+        with open (nodes_path, encoding='utf-8') as f:
+            unique_nodes = json.load(f)
+        with open (relations_path, encoding='utf-8') as f:
+            unique_relations = json.load(f)
+    else:
+        unique_nodes, unique_relations = read_files(knowledge_path)
+    
     create_nodes(graph, unique_nodes)
     create_relations(graph, unique_relations)
 
