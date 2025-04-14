@@ -2,9 +2,9 @@
 The inspiration of this functions script is from <https://github.com/JesseYule/KnowledgeGraphBeginner>
 """
 
-import os
 import json
-from py2neo import Graph, Node
+from tqdm import tqdm
+from py2neo import Node, Relationship, NodeMatcher
 
 def read_files(graph_ori_path):
     """
@@ -19,7 +19,7 @@ def read_files(graph_ori_path):
         dict, dict: unique values (nodes) of each keys, unique values ([subject, object]) of each keys (relation)
     """
 
-    with open (graph_ori_path) as f:
+    with open (graph_ori_path, encoding='utf-8') as f:
         data_list = json.load(f)
     
     # get unique keys
@@ -31,12 +31,12 @@ def read_files(graph_ori_path):
 
     # create a dict to store unique values (nodes) of each keys
     nodes = {
-        key : () for key in unique_keys
+        key : set() for key in unique_keys
     }
 
     # create a dict to store unique values ([subject, object]) of each keys (relation)
     relations_part1 = {
-        key : [] for key in unique_keys
+        key : [] for key in unique_keys if key != "disease"
     }
     # the value of "subdepartment" stores the relations between small and big departments
     relations = {**relations_part1, "subdepartment": []}
@@ -44,15 +44,17 @@ def read_files(graph_ori_path):
     # add information
     for data_dict in data_list:
 
-        this_disease = data_dict["name"]
+        this_disease = data_dict["disease"]
         
         for key in data_dict.keys():
             value = data_dict[key]
 
             if isinstance(value, str):
-                nodes[key].add(value)
-                if key != "name":
+                if key != "disease":
                     relations[key].append([this_disease, value])
+                    nodes[key].add(value)
+                else:
+                    nodes[key].add(value)
     
             elif isinstance(value, list):
                 if key == "cure_department":
@@ -71,33 +73,57 @@ def read_files(graph_ori_path):
     return nodes, relations
 
 
-
-def create_nodes(graph, label, nodes):
+def create_nodes(graph, nodes):
     """
-    Build noeds except "disease" by using py2neo
+    Create nodes by using py2neo
 
     Args:
         graph (_type_): 
-        label ( str ): 
-        nodes ( dict ): 
+        nodes ( dict ): unique values (nodes) of each keys ()
     """
-    pass
 
-def create_disease_nodes(graph, nodes):
+    for key in tqdm(nodes.keys(), desc="Creating nodes"):
+        for unique_node in nodes[key]:
+            node = Node(key, detail = unique_node)
+            graph.create(node)
+    print(f"Create nodes successfully!")
+
+
+def create_relations(graph, relations):
     """
-    Build disease nodes which have multiple attributes
+    Create relations by using py2neo
 
     Args:
         graph (_type_): 
-        nodes ( dict ): 
+        relations (_type_): unique values ([subject, object]) of each keys (relation)
     """
-    pass
 
-def create_graph_nodes(graph):
+    node_matcher = NodeMatcher(graph)
+    for key in tqdm(relations.keys(), desc="Creating relations"):
+        if key != "subdepartment":
+            for unique_relation in relations[key]:
+                head = node_matcher.match("disease").where(detail=unique_relation[0]).first()
+                tail = node_matcher.match(key).where(detail=unique_relation[1]).first()
+                relation = Relationship(head, key, tail)
+                graph.create(relation)
+        else:
+            for unique_relation in relations[key]:
+                head = node_matcher.match("cure_department").where(detail=unique_relation[0]).first()
+                tail = node_matcher.match("cure_department").where(detail=unique_relation[1]).first()
+                relation = Relationship(head, key, tail)
+                graph.create(relation)
+    print(f"Create relations successfully! ")
+
+
+def create_graph(graph, knowledge_path = 'KG_data_source\medical_ed.json'):
     """
     Create nodes in the graph using functions defined before
 
     Args:
         graph (_type_): 
     """
-    pass
+
+    unique_nodes, unique_relations = read_files(knowledge_path)
+    create_nodes(graph, unique_nodes)
+    create_relations(graph, unique_relations)
+
