@@ -2,7 +2,6 @@
 The inspiration of this functions script is from <https://github.com/JesseYule/KnowledgeGraphBeginner>
 """
 
-import os
 import json
 from tqdm import tqdm
 from py2neo import Node, Relationship, NodeMatcher
@@ -74,30 +73,18 @@ def read_files(graph_ori_path):
     return nodes, relations
 
 
-def create_nodes(graph, nodes):
-    """
-    Create nodes by using py2neo
-
-    Args:
-        graph (_type_): 
-        nodes ( dict ): unique values (nodes) of each keys ()
-    """
+# Create nodes by using py2neo
+def create_nodes(logger, graph, nodes):
 
     for key in tqdm(nodes.keys(), desc="Creating nodes"):
         for unique_node in nodes[key]:
             node = Node(key, detail = unique_node)
             graph.create(node)
-    print(f"Create nodes successfully!")
+    logger.info(f"Create nodes successfully!")
 
 
-def create_relations(graph, relations):
-    """
-    Create relations by using py2neo
-
-    Args:
-        graph (_type_): 
-        relations (_type_): unique values ([subject, object]) of each keys (relation)
-    """
+# Create relations by using py2neo
+def create_relations(logger, graph, relations):
 
     node_matcher = NodeMatcher(graph)
     for key in tqdm(relations.keys(), desc="Creating relations"):
@@ -113,29 +100,16 @@ def create_relations(graph, relations):
                 tail = node_matcher.match("cure_department").where(detail=unique_relation[1]).first()
                 relation = Relationship(head, key, tail)
                 graph.create(relation)
-    print(f"Create relations successfully! ")
+    logger.info(f"Create relations successfully!")
 
 
-def create_graph(graph, knowledge_path = 'KG_data_source/medical_ed.json', nodes_path = 'KG_data_source/nodes.json', relations_path = 'KG_data_source/relations.json'):
-    """
-    Create nodes in the graph using functions defined before
+# Create nodes in the graph using functions defined before
+def create_graph(logger, graph, knowledge_path = 'data/medical_default.json'):
 
-    Args:
-        graph (_type_): 
-        knowledge_path (str, optional): Defaults to 'KG_data_source/medical_ed.json'.
-        nodes_path (str, optional): Defaults to 'KG_data_source/nodes.json'.
-        relations_path (str, optional): Defaults to 'KG_data_source/relations.json'.
-    """
+    logger.info(f"Creating KG ···")
 
-    if os.path.exists(nodes_path) and os.path.exists(relations_path):
-        print(f"本地路径存在，将通过本地数据创建知识图谱···")
-        with open (nodes_path, encoding='utf-8') as f:
-            unique_nodes = json.load(f)
-        with open (relations_path, encoding='utf-8') as f:
-            unique_relations = json.load(f)
-    else:
-        unique_nodes, unique_relations = read_files(knowledge_path)
+    unique_nodes, unique_relations = read_files(knowledge_path)
     
-    create_nodes(graph, unique_nodes)
-    create_relations(graph, unique_relations)
+    create_nodes(logger, graph, unique_nodes)
+    create_relations(logger, graph, unique_relations)
 
