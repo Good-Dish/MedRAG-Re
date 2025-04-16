@@ -42,13 +42,14 @@ if __name__ == '__main__':
                  graph = this_graph,
                  knowledge_path = this_knowledge_path)
     
-    # generate IDF file to extracte keywords from patient's query
+    # generate IDF file to extracte keywords from patient's query if the file doesn't exist
     if os.path.exists(os.path.join('data', f"{this_knowledge_name}_IDF.txt")):
         generate_idf_file(logger = this_logger,
                           knowledge_name = this_knowledge_name, 
-                          idf_file_dir = 'data')
+                          idf_file_dir = 'data',
+                          keys = config["extract"]["keys"])
     
     # extracte keywords from patient's query
-    keywords_list = extract_keywords(text = args.query, 
-                                     topk = config["extract"]["topk"], 
-                                     idf_path = os.path.join('data', f"{this_knowledge_name}_IDF.txt"))
+    keywords_list = extract_keywords_CH(text = args.query, 
+                                        topk = config["extract"]["topk"],
+                                        idf_path = os.path.join('data', f"{this_knowledge_name}_IDF.txt"))

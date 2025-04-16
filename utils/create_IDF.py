@@ -13,14 +13,17 @@ def read_json_file(file_path):
     return data
 
 
-# Extract the attributes ('desc', 'cause', 'symptom') of each disease
-def extract_text(data):
+# Extract the attributes (keys) of each disease
+def extract_text(data, keys):
 
     texts = []
-    for item in data:
-        texts.append(item.get('desc', ''))
-        texts.append(item.get('cause', ''))
-        texts.extend(item.get('symptom', []))
+    for key in keys:
+        for item in data:
+            value = item.get(key, '')
+            if isinstance(value, str):
+                texts.append(value)
+            elif isinstance(value, list):
+                texts.extend(value)
     return texts
 
 
@@ -58,13 +61,13 @@ def generate_file(logger, idf_values, knowledge_name):
 
 
 # Read the data file and generate the IDF file
-def generate_idf_file(logger, knowledge_name = "default"):
+def generate_idf_file(logger, keys, knowledge_name = "default"):
 
     logger.info(f"Creating IDF file···")
     
     knowledge_file_path = os.path.join('data', f"medical_{knowledge_name}.json")
 
     data = read_json_file(knowledge_file_path)
-    texts = extract_text(data)
+    texts = extract_text(data, keys)
     idf_values = calculate_idf(texts)
     generate_file(logger, idf_values, knowledge_name)
