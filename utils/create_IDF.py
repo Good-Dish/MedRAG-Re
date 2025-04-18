@@ -16,30 +16,35 @@ def read_json_file(file_path):
 # Extract the attributes (keys) of each disease
 def extract_text(data, keys):
 
-    texts = []
+    texts = {key : [] for key in keys}
+
     for key in keys:
         for item in data:
             value = item.get(key, '')
             if isinstance(value, str):
-                texts.append(value)
+                texts[key].append(value)
             elif isinstance(value, list):
-                texts.extend(value)
+                texts[key].extend(value)
     return texts
 
 
 # Calculate the IDF value
 def calculate_idf(texts):
+    texts_list = []
+    for value in texts.values():
+        texts_list.extend(value)
 
     # Count how many documents each word appears in
     document_frequency = defaultdict(int)
-    for doc in texts:
+    for doc in texts_list:
         words = set(jieba.lcut(doc))
+        # filter
         filtered_words = [word for word in words if re.match(r'^[\u4e00-\u9fa5]+$', word)]
         for word in filtered_words:
             document_frequency[word] += 1
 
     # Calculate the total number of documents in the corpus
-    N = len(texts)
+    N = len(texts_list)
 
     # Calculate the IDF value for each word
     idf_values = {}
@@ -61,13 +66,9 @@ def generate_file(logger, idf_values, knowledge_name):
 
 
 # Read the data file and generate the IDF file
-def generate_idf_file(logger, keys, knowledge_name = "default"):
+def generate_idf_file(logger, texts, knowledge_name = "default"):
 
     logger.info(f"Creating IDF file···")
     
-    knowledge_file_path = os.path.join('data', f"medical_{knowledge_name}.json")
-
-    data = read_json_file(knowledge_file_path)
-    texts = extract_text(data, keys)
     idf_values = calculate_idf(texts)
     generate_file(logger, idf_values, knowledge_name)

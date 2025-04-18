@@ -30,7 +30,6 @@ if __name__ == '__main__':
     # link to your database
     this_graph = Graph(config['database']['URI'], 
                   auth=(config['database']['user'], config['database']['password']))
-
     try:
         this_graph.run("RETURN 1")
         this_logger.info(f"Link to the database successfully!")
@@ -43,13 +42,38 @@ if __name__ == '__main__':
                  knowledge_path = this_knowledge_path)
     
     # generate IDF file to extracte keywords from patient's query if the file doesn't exist
+    knowledge_data = read_json_file(this_knowledge_path)
+    texts_keys = extract_text(data = knowledge_data,
+                              keys = config["extract_keywords"]["keys"])
+    
     if os.path.exists(os.path.join('data', f"{this_knowledge_name}_IDF.txt")):
+        pass
+    else:
         generate_idf_file(logger = this_logger,
-                          knowledge_name = this_knowledge_name, 
-                          idf_file_dir = 'data',
-                          keys = config["extract"]["keys"])
+                          texts = texts_keys,
+                          knowledge_name = this_knowledge_name)
     
     # extracte keywords from patient's query
     keywords_list = extract_keywords_CH(text = args.query, 
-                                        topk = config["extract"]["topk"],
+                                        topk = config["extract_keywords"]["topk"],
                                         idf_path = os.path.join('data', f"{this_knowledge_name}_IDF.txt"))
+    
+    # get embeddings of queries
+    query_embedding_list = get_embedding(texts = keywords_list, 
+                                         embedding_type = config["embedding"]["type"])
+
+    # get embeddings of special values in KG
+    nodes_embedding_list = get_embedding(texts = texts_keys, 
+                                         embedding_type = config["embedding"]["type"])
+    
+    # match nodes
+    nodes_information = Faiss(document_embeddings = nodes_embedding_list,
+                              query_embeddings= query_embedding_list,
+                              topk = config["embedding"]["topk"],
+                              texts = texts_keys)
+    leaf_nodes = match_nodes(graph = this_graph,
+                             nodes_info = nodes_information)
+    
+    
+    
+
