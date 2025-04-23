@@ -25,6 +25,7 @@ if __name__ == '__main__':
         config = yaml.safe_load(file)
     this_knowledge_name = config["knowledge"]["knowledge_name"]
     this_knowledge_path = os.path.join('data', f"medical_{this_knowledge_name}.json")
+    this_knowledge_mapping = os.path.join('data', f"keys_language_map_{this_knowledge_name}.json")
 
 
     # link to your database
@@ -54,25 +55,36 @@ if __name__ == '__main__':
                           knowledge_name = this_knowledge_name)
     
     # extracte keywords from patient's query
-    keywords_list = extract_keywords_CH(text = args.query, 
+    keywords_dict = extract_keywords_CH(text = args.query, 
                                         topk = config["extract_keywords"]["topk"],
                                         idf_path = os.path.join('data', f"{this_knowledge_name}_IDF.txt"))
     
     # get embeddings of queries
-    query_embedding_list = get_embedding(texts = keywords_list, 
+    query_embedding_dict = get_embedding(texts = keywords_dict, 
                                          embedding_type = config["embedding"]["type"])
 
     # get embeddings of special values in KG
-    nodes_embedding_list = get_embedding(texts = texts_keys, 
+    nodes_embedding_dict = get_embedding(texts = texts_keys, 
                                          embedding_type = config["embedding"]["type"])
     
     # match nodes
-    nodes_information = Faiss(document_embeddings = nodes_embedding_list,
-                              query_embeddings= query_embedding_list,
+    nodes_information = Faiss(document_embeddings = nodes_embedding_dict,
+                              query_embeddings= query_embedding_dict,
                               topk = config["embedding"]["topk"],
                               texts = texts_keys)
-    leaf_nodes = match_nodes(graph = this_graph,
-                             nodes_info = nodes_information)
+    key_leaf_nodes = match_nodes(graph = this_graph,
+                                 nodes_info = nodes_information)
+    
+    # get the information of subgraph
+    KG_retrieval = build_subgraph(graph = this_graph,
+                                  leaf_nodes = key_leaf_nodes,
+                                  mapping_file = this_knowledge_mapping)
+    
+    # ask
+    ask_withKG(logger = this_logger, 
+               query = args.query,
+               KG_info = KG_retrieval, 
+               api_key = config["ask_LLM"]["key"])
     
     
     

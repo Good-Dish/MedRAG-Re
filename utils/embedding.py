@@ -32,7 +32,7 @@ def Faiss(document_embeddings, query_embeddings, topk, texts):
         index = faiss.IndexFlatIP(value_embedding.shape[1])
         index.add(value_embedding)
         
-        _, indices = index.search(np.array(query_embeddings), topk)
+        _, indices = index.search(np.array(query_embeddings["keywords"]), topk)
 
         unique_indices = set()
         for sublist in indices:

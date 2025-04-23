@@ -1,0 +1,22 @@
+{
+    "get_prob": "的患病概率是",
+    "yibao_status": "的医保情况是",
+    "desc": "的疾病描述是",
+    "prevent": "应当避免",
+    "cure_way": "的治疗方式是",
+    "recommand_drug": "的推荐用药是",
+    "cure_lasttime": "的治愈周期是",
+    "not_eat": "不应摄入",
+    "recommand_eat": "的推荐食谱为",
+    "cured_prob": "的治愈概率为",
+    "check": "的检查项目为",
+    "get_way": "的可能患病渠道为",
+    "cure_department": "的所属科室为",
+    "do_eat": "推荐摄入",
+    "acompany": "的并发症为",
+    "easy_get": "的高发人群为",
+    "cause": "的发病原因为",
+    "cost_money": "的治疗费用是",
+    "symptom": "的症状是",
+    "subdepartment": "所属的子科室为"
+}

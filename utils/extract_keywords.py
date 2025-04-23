@@ -6,8 +6,8 @@ def extract_keywords_CH(text, topk, idf_path = "data/default_IDF.txt"):
     jieba.analyse.set_idf_path(idf_path)
     keywords_jieba = tfidf(text, topK=topk, withWeight=True)
     
-    keywords = []
+    keywords = {"keywords" : []}
     for keyword, weight in keywords_jieba:
-        keywords.append(keyword)
+        keywords["keywords"].append(keyword)
 
     return keywords

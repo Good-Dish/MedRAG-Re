@@ -1,0 +1,17 @@
+ask_LLM:
+  key: 
+database:
+  URI: 
+  password: 
+  user: 
+embedding:
+  topk: 1
+  type: base
+extract_keywords:
+  keys: !!python/tuple
+  - desc
+  - cause
+  - symptom
+  topk: 5
+knowlege:
+  knowledge_name: default
