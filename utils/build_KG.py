@@ -50,11 +50,11 @@ def read_files(graph_ori_path):
             value = data_dict[key]
 
             if isinstance(value, str):
-                if key != "disease":
+                nodes[key].add(value)
+                if key != "disease" and key != "cure_department":
                     relations[key].append([this_disease, value])
-                    nodes[key].add(value)
-                else:
-                    nodes[key].add(value)
+                elif key == "cure_department":
+                    relations[key].append([value, this_disease])
     
             elif isinstance(value, list):
                 if key == "cure_department":
@@ -62,8 +62,8 @@ def read_files(graph_ori_path):
                     small_department = value[1]
                     nodes[key].add(big_department)
                     nodes[key].add(small_department)
-                    relations[key].append([this_disease, small_department])
-                    relations["subdepartment"].append([small_department, big_department])
+                    relations[key].append([small_department, this_disease])
+                    relations["subdepartment"].append([big_department, small_department])
 
                 else:
                     for v in value:
@@ -88,10 +88,16 @@ def create_relations(logger, graph, relations):
 
     node_matcher = NodeMatcher(graph)
     for key in tqdm(relations.keys(), desc="Creating relations"):
-        if key != "subdepartment":
+        if key != "subdepartment" and key != "cure_department":
             for unique_relation in relations[key]:
                 head = node_matcher.match("disease").where(detail=unique_relation[0]).first()
                 tail = node_matcher.match(key).where(detail=unique_relation[1]).first()
+                relation = Relationship(head, key, tail)
+                graph.create(relation)
+        elif key == "cure_department":
+            for unique_relation in relations[key]:
+                head = node_matcher.match(key).where(detail=unique_relation[0]).first()
+                tail = node_matcher.match("disease").where(detail=unique_relation[1]).first()
                 relation = Relationship(head, key, tail)
                 graph.create(relation)
         else:

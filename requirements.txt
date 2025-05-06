@@ -4,6 +4,5 @@ numpy
 openai
 py2neo
 PyYAML
-PyYAML
 sentence_transformers
 tqdm

@@ -34,13 +34,10 @@ def Faiss(document_embeddings, query_embeddings, topk, texts):
         
         _, indices = index.search(np.array(query_embeddings["keywords"]), topk)
 
-        unique_indices = set()
+        nodes = set()
         for sublist in indices:
-            unique_indices.add(sublist)
-
-        nodes = []
-        for i in unique_indices:
-            nodes.append(value_text[i])
+            for s in sublist:
+                nodes.add(value_text[s])
 
         nodes_info[key] = nodes
     

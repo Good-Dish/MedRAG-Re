@@ -1,49 +1,57 @@
-from py2neo import NodeMatcher, Relationship
+from py2neo import NodeMatcher
 import json
 
-def match_nodes(graph, nodes_info):
 
-    node_matcher = NodeMatcher(graph)
-
-    nodes = []
-    for key in nodes_info.keys():
-        value = nodes_info[key]
-        for v in value:
-            n = node_matcher.match(key).where(detail=v).first()
-            nodes.append(n)
-    
-    return nodes
-
-
-def build_subgraph(graph, leaf_nodes, mapping_file = 'data\keys_language_map_default.json'):
+def build_subgraph(logger, graph, leaf_nodes, mapping_file = 'data/keys_language_map_default.json'):
+    logger.info(f"Building subgraph based on your query···")
 
     with open (mapping_file, encoding='utf-8') as f:
         mapping = json.load(f)
 
     subgraph_info = []
 
+    node_matcher = NodeMatcher(graph)
 
-    for leaf_node in leaf_nodes:
+    processed_diseases = set()
+    visited_nodes = set()
+    queue = []
+    
+    # fine original leaf nodes
+    for key in leaf_nodes.keys():
+        match_names = leaf_nodes[key]
+        for name in match_names:
+            the_node = node_matcher.match(key, detail=name).first()
+            queue.append(the_node)
+            visited_nodes.add(the_node.identity)
+
+    while queue:
+        current_node = queue.pop(0)
+
+        if current_node.identity not in processed_diseases:
+
+            processed_diseases.add(current_node.identity)
+        
+            incoming_relationships = list(graph.match(nodes=(None, current_node), r_type=None))
             
-            query = f"MATCH p=(n {{detail: '{leaf_node['detail']}'}})-[:PARENT*]->(root) WHERE NOT (root)-[:PARENT]->() RETURN p"
-            paths = graph.run(query)
-
-            for path in paths:
-                for rel in path[0].relationships:
-                    start_node = rel.start_node
-                    end_node = rel.end_node
-                    relation_type = rel.type
-                    sentence = f"{start_node['detail']}{mapping[relation_type]}{end_node['detail']}"
+            if incoming_relationships:
             
-                    subgraph_info.append(sentence)
-
-                    parent = end_node
-                    child_query = f"MATCH (p {{detail: '{parent['detail']}'}})-[:PARENT]->(child) RETURN child"
-                    children = graph.run(child_query)
-                    for child in children:
-                        child_node = child[0]
-                        relationship = graph.match((parent, child_node)).first().type
-                        sentence = f"{parent['detail']}{mapping[relationship]}{child_node['detail']}"
-                        subgraph_info.append(sentence)
+                for rel in incoming_relationships:
+                    parent_node = rel.start_node
+                    rel_str = f"{parent_node['detail']}{mapping[type(rel).__name__]}{current_node['detail']}"
+                    subgraph_info.append(rel_str)
+                    
+                    if parent_node.identity not in visited_nodes:
+                        queue.append(parent_node)
+                        visited_nodes.add(parent_node.identity)
+                    
+                if 'disease' in current_node.labels:
+                    outgoing_relationships = list(graph.match(nodes=(current_node, None), r_type=None))
+                    for out_rel in outgoing_relationships:
+                        child_node = out_rel.end_node
+                        if child_node.identity not in visited_nodes:
+                            # 添加扩充的关系字符串
+                            exp_rel_str = f"{current_node['detail']}{mapping[type(out_rel).__name__]}{child_node['detail']}"
+                            subgraph_info.append(exp_rel_str)
+                            visited_nodes.add(child_node.identity)
     
     return subgraph_info
